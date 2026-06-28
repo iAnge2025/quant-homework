@@ -1,0 +1,790 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>腾讯控股 00700.HK 近一年行情</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #6b7280;
+      --line: #dde5ef;
+      --soft-line: #edf2f7;
+      --red: #d94747;
+      --green: #16865a;
+      --blue: #2d6cdf;
+      --amber: #b77a15;
+      --shadow: 0 12px 30px rgba(25, 35, 55, .08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+    }
+
+    .app {
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .shell {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: clamp(24px, 3vw, 38px);
+      font-weight: 760;
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    .title p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .toolbar button {
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 0 12px;
+      color: #273449;
+      background: var(--panel);
+      cursor: pointer;
+      font-weight: 650;
+    }
+
+    .toolbar button.active {
+      border-color: var(--blue);
+      color: #ffffff;
+      background: var(--blue);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      min-height: 96px;
+      padding: 15px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: 0 4px 18px rgba(25, 35, 55, .05);
+    }
+
+    .metric .label {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .metric .value {
+      margin-top: 8px;
+      font-size: clamp(22px, 2.2vw, 30px);
+      font-weight: 760;
+      line-height: 1.05;
+      white-space: nowrap;
+    }
+
+    .metric .sub {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .market-panel {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .chart-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 58px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    #focusReadout {
+      min-width: 270px;
+      text-align: right;
+      color: #243047;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      padding: 12px 12px 10px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      border-radius: 4px;
+      background: #ffffff;
+    }
+
+    #priceCanvas {
+      height: 470px;
+    }
+
+    #volumeCanvas {
+      height: 160px;
+      margin-top: 10px;
+    }
+
+    .tooltip {
+      position: absolute;
+      z-index: 4;
+      width: 214px;
+      padding: 10px 12px;
+      border: 1px solid #d4deea;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .96);
+      box-shadow: 0 10px 24px rgba(20, 30, 50, .16);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity .12s ease, transform .12s ease;
+      font-size: 12px;
+    }
+
+    .tooltip.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .tooltip .date {
+      margin-bottom: 8px;
+      color: var(--ink);
+      font-weight: 760;
+    }
+
+    .tooltip dl {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 5px 12px;
+      margin: 0;
+    }
+
+    .tooltip dt {
+      color: var(--muted);
+    }
+
+    .tooltip dd {
+      margin: 0;
+      font-variant-numeric: tabular-nums;
+      font-weight: 650;
+    }
+
+    .range-panel {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) minmax(120px, 1fr) auto;
+      gap: 12px;
+      align-items: end;
+      padding: 14px 16px 16px;
+      border-top: 1px solid var(--line);
+      background: #fbfdff;
+    }
+
+    .range-field label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--blue);
+    }
+
+    .range-dates {
+      min-width: 230px;
+      color: #263347;
+      text-align: right;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.5;
+    }
+
+    .up {
+      color: var(--red);
+    }
+
+    .down {
+      color: var(--green);
+    }
+
+    @media (max-width: 860px) {
+      .app {
+        padding: 14px;
+      }
+
+      .topbar,
+      .chart-head {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .toolbar {
+        justify-content: flex-start;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      #focusReadout {
+        min-width: 0;
+        text-align: left;
+      }
+
+      .range-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .range-dates {
+        min-width: 0;
+        text-align: left;
+      }
+
+      #priceCanvas {
+        height: 390px;
+      }
+    }
+
+    @media (max-width: 540px) {
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+
+      .metric {
+        min-height: 84px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <div class="shell">
+      <header class="topbar">
+        <div class="title">
+          <h1>腾讯控股 00700.HK</h1>
+          <p id="subtitle">近一年日线行情 · Tushare Pro</p>
+        </div>
+        <div class="toolbar" aria-label="时间范围">
+          <button type="button" data-window="22">1M</button>
+          <button type="button" data-window="66">3M</button>
+          <button type="button" data-window="132">6M</button>
+          <button type="button" data-window="all" class="active">1Y</button>
+        </div>
+      </header>
+
+      <section class="metrics" aria-label="行情摘要">
+        <div class="metric">
+          <div class="label">最新收盘</div>
+          <div class="value" id="lastClose">--</div>
+          <div class="sub" id="lastDate">--</div>
+        </div>
+        <div class="metric">
+          <div class="label">区间涨跌幅</div>
+          <div class="value" id="periodReturn">--</div>
+          <div class="sub" id="periodRange">--</div>
+        </div>
+        <div class="metric">
+          <div class="label">区间最高 / 最低</div>
+          <div class="value" id="hiLo">--</div>
+          <div class="sub" id="hiLoDates">--</div>
+        </div>
+        <div class="metric">
+          <div class="label">日均成交量</div>
+          <div class="value" id="avgVolume">--</div>
+          <div class="sub" id="avgAmount">--</div>
+        </div>
+      </section>
+
+      <section class="market-panel">
+        <div class="chart-head">
+          <div class="legend">
+            <span style="color: var(--red)"><i class="dot"></i>上涨 K 线</span>
+            <span style="color: var(--green)"><i class="dot"></i>下跌 K 线</span>
+            <span style="color: var(--blue)"><i class="dot"></i>MA10</span>
+            <span style="color: var(--amber)"><i class="dot"></i>MA30</span>
+          </div>
+          <div id="focusReadout">--</div>
+        </div>
+        <div class="canvas-wrap" id="chartHost">
+          <canvas id="priceCanvas"></canvas>
+          <canvas id="volumeCanvas"></canvas>
+          <div class="tooltip" id="tooltip" role="status" aria-live="polite"></div>
+        </div>
+        <div class="range-panel">
+          <div class="range-field">
+            <label for="startRange">开始</label>
+            <input id="startRange" type="range" min="0" value="0">
+          </div>
+          <div class="range-field">
+            <label for="endRange">结束</label>
+            <input id="endRange" type="range" min="0" value="0">
+          </div>
+          <div class="range-dates" id="rangeDates">--</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="data/tencent_00700_hk_daily_1y.js"></script>
+  <script>
+    const rawRows = Array.isArray(window.TENCENT_00700_HK_DAILY_1Y)
+      ? window.TENCENT_00700_HK_DAILY_1Y
+      : [];
+
+    const rows = rawRows.map((row) => ({
+      tsCode: row.ts_code,
+      date: String(row.trade_date).replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3"),
+      open: Number(row.open),
+      high: Number(row.high),
+      low: Number(row.low),
+      close: Number(row.close),
+      preClose: Number(row.pre_close),
+      change: Number(row.change),
+      pctChg: Number(row.pct_chg),
+      volume: Number(row.vol),
+      amount: Number(row.amount)
+    }));
+
+    function movingAverage(list, days) {
+      let sum = 0;
+      return list.map((row, index) => {
+        sum += row.close;
+        if (index >= days) sum -= list[index - days].close;
+        return index >= days - 1 ? sum / days : null;
+      });
+    }
+
+    const ma10 = movingAverage(rows, 10);
+    const ma30 = movingAverage(rows, 30);
+    rows.forEach((row, index) => {
+      row.ma10 = ma10[index];
+      row.ma30 = ma30[index];
+    });
+
+    const state = {
+      start: 0,
+      end: Math.max(rows.length - 1, 0),
+      hoverIndex: null
+    };
+
+    const priceCanvas = document.getElementById("priceCanvas");
+    const volumeCanvas = document.getElementById("volumeCanvas");
+    const chartHost = document.getElementById("chartHost");
+    const tooltip = document.getElementById("tooltip");
+    const startRange = document.getElementById("startRange");
+    const endRange = document.getElementById("endRange");
+    const rangeDates = document.getElementById("rangeDates");
+    const focusReadout = document.getElementById("focusReadout");
+
+    startRange.max = Math.max(rows.length - 1, 0);
+    endRange.max = Math.max(rows.length - 1, 0);
+    endRange.value = state.end;
+
+    const fmtPrice = (value) => Number(value).toFixed(2);
+    const fmtPct = (value) => `${value >= 0 ? "+" : ""}${Number(value).toFixed(2)}%`;
+    const fmtCompact = (value) => Intl.NumberFormat("zh-CN", {
+      notation: "compact",
+      maximumFractionDigits: 2
+    }).format(value);
+    const fmtMoney = (value) => `HK$ ${fmtCompact(value)}`;
+
+    function setupCanvas(canvas) {
+      const ratio = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.floor(rect.width * ratio));
+      canvas.height = Math.max(1, Math.floor(rect.height * ratio));
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      return { ctx, width: rect.width, height: rect.height };
+    }
+
+    function getView() {
+      return rows.slice(state.start, state.end + 1);
+    }
+
+    function mapY(value, min, max, top, height) {
+      if (max === min) return top + height / 2;
+      return top + (max - value) / (max - min) * height;
+    }
+
+    function drawGrid(ctx, x, y, width, height, ticks, min, max, formatter) {
+      ctx.save();
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue("--soft-line").trim();
+      ctx.fillStyle = "#6b7280";
+      ctx.lineWidth = 1;
+      ctx.font = "12px Segoe UI, Arial, sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+
+      for (let i = 0; i <= ticks; i += 1) {
+        const yy = y + (height / ticks) * i;
+        const value = max - ((max - min) / ticks) * i;
+        ctx.beginPath();
+        ctx.moveTo(x, yy);
+        ctx.lineTo(x + width, yy);
+        ctx.stroke();
+        ctx.fillText(formatter(value), x - 8, yy);
+      }
+      ctx.restore();
+    }
+
+    function drawDates(ctx, view, x, y, width) {
+      const count = view.length;
+      const indexes = count <= 6
+        ? view.map((_, index) => index)
+        : [0, Math.floor(count * .25), Math.floor(count * .5), Math.floor(count * .75), count - 1];
+
+      ctx.save();
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "12px Segoe UI, Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      indexes.forEach((index) => {
+        const xx = x + (index + .5) * width / count;
+        ctx.fillText(view[index].date.slice(5), xx, y);
+      });
+      ctx.restore();
+    }
+
+    function drawLine(ctx, view, key, x, width, priceMin, priceMax, top, height, color) {
+      ctx.save();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      let started = false;
+
+      view.forEach((row, index) => {
+        if (row[key] == null) {
+          started = false;
+          return;
+        }
+        const xx = x + (index + .5) * width / view.length;
+        const yy = mapY(row[key], priceMin, priceMax, top, height);
+        if (!started) {
+          ctx.moveTo(xx, yy);
+          started = true;
+        } else {
+          ctx.lineTo(xx, yy);
+        }
+      });
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawPriceChart() {
+      const { ctx, width, height } = setupCanvas(priceCanvas);
+      const view = getView();
+      const pad = { left: 64, right: 22, top: 18, bottom: 32 };
+      const plotX = pad.left;
+      const plotY = pad.top;
+      const plotW = width - pad.left - pad.right;
+      const plotH = height - pad.top - pad.bottom;
+
+      ctx.clearRect(0, 0, width, height);
+      if (!view.length) return;
+
+      const highs = view.map((row) => Math.max(row.high, row.ma10 || row.high, row.ma30 || row.high));
+      const lows = view.map((row) => Math.min(row.low, row.ma10 || row.low, row.ma30 || row.low));
+      const rawMax = Math.max(...highs);
+      const rawMin = Math.min(...lows);
+      const span = Math.max(rawMax - rawMin, 1);
+      const priceMax = rawMax + span * .08;
+      const priceMin = rawMin - span * .08;
+      const candleW = Math.max(2, Math.min(13, plotW / view.length * .62));
+
+      drawGrid(ctx, plotX, plotY, plotW, plotH, 5, priceMin, priceMax, (value) => fmtPrice(value));
+
+      view.forEach((row, index) => {
+        const xx = plotX + (index + .5) * plotW / view.length;
+        const openY = mapY(row.open, priceMin, priceMax, plotY, plotH);
+        const closeY = mapY(row.close, priceMin, priceMax, plotY, plotH);
+        const highY = mapY(row.high, priceMin, priceMax, plotY, plotH);
+        const lowY = mapY(row.low, priceMin, priceMax, plotY, plotH);
+        const up = row.close >= row.open;
+        ctx.strokeStyle = up ? "#d94747" : "#16865a";
+        ctx.fillStyle = up ? "rgba(217, 71, 71, .9)" : "rgba(22, 134, 90, .9)";
+        ctx.lineWidth = 1;
+
+        ctx.beginPath();
+        ctx.moveTo(xx, highY);
+        ctx.lineTo(xx, lowY);
+        ctx.stroke();
+
+        const bodyY = Math.min(openY, closeY);
+        const bodyH = Math.max(Math.abs(closeY - openY), 1);
+        ctx.fillRect(xx - candleW / 2, bodyY, candleW, bodyH);
+      });
+
+      drawLine(ctx, view, "ma10", plotX, plotW, priceMin, priceMax, plotY, plotH, "#2d6cdf");
+      drawLine(ctx, view, "ma30", plotX, plotW, priceMin, priceMax, plotY, plotH, "#b77a15");
+      drawDates(ctx, view, plotX, height - 24, plotW);
+      drawCrosshair(ctx, view, plotX, plotY, plotW, plotH, priceMin, priceMax, "price");
+    }
+
+    function drawVolumeChart() {
+      const { ctx, width, height } = setupCanvas(volumeCanvas);
+      const view = getView();
+      const pad = { left: 64, right: 22, top: 12, bottom: 28 };
+      const plotX = pad.left;
+      const plotY = pad.top;
+      const plotW = width - pad.left - pad.right;
+      const plotH = height - pad.top - pad.bottom;
+
+      ctx.clearRect(0, 0, width, height);
+      if (!view.length) return;
+
+      const maxVolume = Math.max(...view.map((row) => row.volume)) * 1.12;
+      drawGrid(ctx, plotX, plotY, plotW, plotH, 3, 0, maxVolume, (value) => fmtCompact(value));
+
+      const barW = Math.max(2, Math.min(13, plotW / view.length * .62));
+      view.forEach((row, index) => {
+        const xx = plotX + (index + .5) * plotW / view.length;
+        const barH = row.volume / maxVolume * plotH;
+        const up = row.close >= row.open;
+        ctx.fillStyle = up ? "rgba(217, 71, 71, .46)" : "rgba(22, 134, 90, .46)";
+        ctx.fillRect(xx - barW / 2, plotY + plotH - barH, barW, barH);
+      });
+
+      drawDates(ctx, view, plotX, height - 21, plotW);
+      drawCrosshair(ctx, view, plotX, plotY, plotW, plotH, 0, maxVolume, "volume");
+    }
+
+    function drawCrosshair(ctx, view, plotX, plotY, plotW, plotH, min, max, mode) {
+      if (state.hoverIndex == null) return;
+      const localIndex = state.hoverIndex - state.start;
+      if (localIndex < 0 || localIndex >= view.length) return;
+      const row = view[localIndex];
+      const xx = plotX + (localIndex + .5) * plotW / view.length;
+      const yy = mode === "price"
+        ? mapY(row.close, min, max, plotY, plotH)
+        : mapY(row.volume, min, max, plotY, plotH);
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(36, 48, 71, .45)";
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(xx, plotY);
+      ctx.lineTo(xx, plotY + plotH);
+      ctx.moveTo(plotX, yy);
+      ctx.lineTo(plotX + plotW, yy);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function updateMetrics() {
+      const view = getView();
+      if (!view.length) return;
+      const first = view[0];
+      const last = view[view.length - 1];
+      const periodReturn = (last.close / first.close - 1) * 100;
+      const highRow = view.reduce((best, row) => row.high > best.high ? row : best, view[0]);
+      const lowRow = view.reduce((best, row) => row.low < best.low ? row : best, view[0]);
+      const avgVol = view.reduce((sum, row) => sum + row.volume, 0) / view.length;
+      const avgAmt = view.reduce((sum, row) => sum + row.amount, 0) / view.length;
+
+      document.getElementById("lastClose").textContent = `HK$ ${fmtPrice(last.close)}`;
+      document.getElementById("lastDate").textContent = `${last.date} · ${fmtPct(last.pctChg)}`;
+      document.getElementById("lastDate").className = `sub ${last.pctChg >= 0 ? "up" : "down"}`;
+      document.getElementById("periodReturn").textContent = fmtPct(periodReturn);
+      document.getElementById("periodReturn").className = `value ${periodReturn >= 0 ? "up" : "down"}`;
+      document.getElementById("periodRange").textContent = `${first.date} 至 ${last.date}`;
+      document.getElementById("hiLo").textContent = `${fmtPrice(highRow.high)} / ${fmtPrice(lowRow.low)}`;
+      document.getElementById("hiLoDates").textContent = `${highRow.date} / ${lowRow.date}`;
+      document.getElementById("avgVolume").textContent = fmtCompact(avgVol);
+      document.getElementById("avgAmount").textContent = `日均成交额 ${fmtMoney(avgAmt)}`;
+      document.getElementById("subtitle").textContent = `${rows.length} 个交易日 · ${rows[0].date} 至 ${rows[rows.length - 1].date} · Tushare Pro`;
+      rangeDates.textContent = `${first.date} 至 ${last.date} · ${view.length} 个交易日`;
+
+      if (state.hoverIndex == null) {
+        focusReadout.innerHTML = `${last.date}　收盘 <strong>HK$ ${fmtPrice(last.close)}</strong>　成交量 <strong>${fmtCompact(last.volume)}</strong>`;
+      }
+    }
+
+    function render() {
+      updateMetrics();
+      drawPriceChart();
+      drawVolumeChart();
+    }
+
+    function clampRange() {
+      state.start = Math.max(0, Math.min(state.start, rows.length - 2));
+      state.end = Math.max(state.start + 1, Math.min(state.end, rows.length - 1));
+      startRange.value = state.start;
+      endRange.value = state.end;
+    }
+
+    function setWindow(size) {
+      if (size === "all") {
+        state.start = 0;
+      } else {
+        state.start = Math.max(0, rows.length - Number(size));
+      }
+      state.end = rows.length - 1;
+      state.hoverIndex = null;
+      clampRange();
+      render();
+    }
+
+    function updateToolbar(activeWindow) {
+      document.querySelectorAll(".toolbar button").forEach((button) => {
+        button.classList.toggle("active", button.dataset.window === activeWindow);
+      });
+    }
+
+    document.querySelectorAll(".toolbar button").forEach((button) => {
+      button.addEventListener("click", () => {
+        setWindow(button.dataset.window);
+        updateToolbar(button.dataset.window);
+      });
+    });
+
+    startRange.addEventListener("input", () => {
+      state.start = Number(startRange.value);
+      if (state.start >= state.end) state.end = Math.min(rows.length - 1, state.start + 1);
+      state.hoverIndex = null;
+      updateToolbar("");
+      clampRange();
+      render();
+    });
+
+    endRange.addEventListener("input", () => {
+      state.end = Number(endRange.value);
+      if (state.end <= state.start) state.start = Math.max(0, state.end - 1);
+      state.hoverIndex = null;
+      updateToolbar("");
+      clampRange();
+      render();
+    });
+
+    function handlePointer(event) {
+      const view = getView();
+      const rect = priceCanvas.getBoundingClientRect();
+      const volRect = volumeCanvas.getBoundingClientRect();
+      const hostRect = chartHost.getBoundingClientRect();
+      const sourceRect = event.currentTarget === volumeCanvas ? volRect : rect;
+      const x = event.clientX - sourceRect.left;
+      const padLeft = 64;
+      const padRight = 22;
+      const plotW = sourceRect.width - padLeft - padRight;
+      const local = Math.max(0, Math.min(view.length - 1, Math.floor((x - padLeft) / plotW * view.length)));
+      state.hoverIndex = state.start + local;
+      const row = rows[state.hoverIndex];
+      const up = row.close >= row.open;
+
+      focusReadout.innerHTML = `${row.date}　收盘 <strong>HK$ ${fmtPrice(row.close)}</strong>　成交量 <strong>${fmtCompact(row.volume)}</strong>`;
+      tooltip.classList.add("show");
+      tooltip.innerHTML = `
+        <div class="date">${row.date}</div>
+        <dl>
+          <dt>开盘</dt><dd>HK$ ${fmtPrice(row.open)}</dd>
+          <dt>最高</dt><dd>HK$ ${fmtPrice(row.high)}</dd>
+          <dt>最低</dt><dd>HK$ ${fmtPrice(row.low)}</dd>
+          <dt>收盘</dt><dd class="${up ? "up" : "down"}">HK$ ${fmtPrice(row.close)}</dd>
+          <dt>涨跌幅</dt><dd class="${row.pctChg >= 0 ? "up" : "down"}">${fmtPct(row.pctChg)}</dd>
+          <dt>成交量</dt><dd>${fmtCompact(row.volume)}</dd>
+          <dt>成交额</dt><dd>${fmtMoney(row.amount)}</dd>
+        </dl>
+      `;
+
+      const left = Math.min(hostRect.width - 226, Math.max(8, event.clientX - hostRect.left + 16));
+      const top = Math.min(hostRect.height - 170, Math.max(8, event.clientY - hostRect.top + 14));
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+      render();
+    }
+
+    function clearPointer() {
+      state.hoverIndex = null;
+      tooltip.classList.remove("show");
+      render();
+    }
+
+    [priceCanvas, volumeCanvas].forEach((canvas) => {
+      canvas.addEventListener("mousemove", handlePointer);
+      canvas.addEventListener("mouseleave", clearPointer);
+      canvas.addEventListener("touchstart", (event) => handlePointer(event.touches[0]), { passive: true });
+      canvas.addEventListener("touchmove", (event) => handlePointer(event.touches[0]), { passive: true });
+      canvas.addEventListener("touchend", clearPointer);
+    });
+
+    window.addEventListener("resize", render);
+
+    if (rows.length) {
+      clampRange();
+      render();
+    } else {
+      document.body.innerHTML = "<main class='app'><div class='shell'><h1>没有加载到行情数据</h1></div></main>";
+    }
+  </script>
+</body>
+</html>
